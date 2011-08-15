@@ -1,0 +1,4 @@
+cron:
+- description: get new stories
+  url: /admin/list_scrape
+  schedule: every 2 hours

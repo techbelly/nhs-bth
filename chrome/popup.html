@@ -1,0 +1,74 @@
+<html>
+<head>
+<style>
+body {
+  min-width:357px;
+  overflow-x:hidden;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  line-height: 17px;
+  
+}
+
+h2 {
+  background-color: transparent;
+  color: #0064B7;
+  display: block;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  font-weight: bold;
+  height: 14px;
+  margin-bottom: 0px;
+  margin-left: 0px;
+  margin-right: 0px;
+  margin-top: 0px;
+  padding-bottom: 0px;
+  padding-left: 0px;
+  padding-right: 0px;
+  padding-top: 0px;
+  width: 183px;
+}
+
+</style>
+<script type="text/javascript" src="http://ajax.googleapis.com/
+ajax/libs/jquery/1.5/jquery.min.js"></script>
+<script>
+    
+    var showArticle = function(data) {
+      if (data.length == 0) {
+        $('#content').text("Sorry, nothing found for this page.");
+      } else {
+        var template = '<h1>FACTS</h1><p>This article is discussed on the NHS\'s <a href="{LINK}">Behind the headlines blog.</a> They were kind enough to find and publish these links:<p>';
+        template = template.replace("{LINK}",data[0].address);
+        if (data[0].links["science"]) {
+          template = template + "<h2>SCIENCE</h2><ul>";
+          for (a in data[0].links["science"]) {
+            template = template + "<li>{SCI_HTML}</li>";
+            template = template.replace("{SCI_HTML}",data[0].links["science"][a]);
+          }
+          template = template + "</ul>";
+        }
+        if (data[0].links["headline"]) {
+          template = template + "<h2>NOT SCIENCE</h2><ul>";
+          for (a in data[0].links["headline"]) {
+            template = template + "<li>{SCI_HTML}</li>";
+            template = template.replace("{SCI_HTML}",data[0].links["headline"][a]);
+          }
+          template = template + "</ul>";
+        }
+        template = template + "<p><small>This is not official. <a href='http://www.techbelly.com'>Who made this?</a></small></p>"
+        $('#content').html(template);
+      }
+      $('a').attr("target","_blank");
+    };
+    
+    chrome.tabs.getSelected(null, function(tab) {
+        jQuery.getJSON("http://tbly-nhs.appspot.com/article",{"url":tab.url},showArticle);
+    });
+</script>
+</head>
+<body>
+<div id="content">
+</div>
+</body>
+</html>
