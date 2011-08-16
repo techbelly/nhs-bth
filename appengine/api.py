@@ -18,14 +18,20 @@ class link_syncer(webapp.RequestHandler):
             link = models.Link.get_by_key_name(latest_hash)
         
         as_json = memcache.get(latest_hash)
+        batch_size = 200
         if as_json is None:
             q = models.Link.gql("WHERE date_added > :1 ORDER BY date_added ASC", link.date_added)
-            newer_links = q.fetch(500)
+            newer_links = q.fetch(batch_size)
             def clean(l):
                 return l.key().name()
-        
-            as_json = simplejson.dumps(map(clean, newer_links))
-            memcache.add(latest_hash,as_json,30*60)
+            links = map(clean, newer_links)
+            as_json = simplejson.dumps(links)
+            keep_time = 60 * 60
+            if len(links) == batch_size:
+                # this batch is cooked.
+                keep_time = 0
+
+            memcache.add(latest_hash,as_json,keep_time)
 
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(as_json)
