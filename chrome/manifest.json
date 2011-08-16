@@ -1,7 +1,7 @@
 {
   "name": "NHS Behind the Headlines checker",
   "version": "1.0",
-  "description": "Checks Behind the Headlines blog for stories related to the page you're on",
+  "description": "Shows links to scientific papers (and other articles) for newspaper health stories covered by the NHS Behind the Headlines blog.",
   "page_action": {
     "default_icon": "xray-19.png", 
     "default_title": "We have FACTS about this page. Click to show them.",  
