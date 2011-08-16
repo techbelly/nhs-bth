@@ -1,12 +1,12 @@
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp import util
 from google.appengine.api import memcache
-
+from google.appengine.ext.db import GqlQuery
 import simplejson
 
 import models
 import utils
-
+import logging
 class link_syncer(webapp.RequestHandler):
     def get(self):
         
@@ -17,21 +17,22 @@ class link_syncer(webapp.RequestHandler):
         else:
             link = models.Link.get_by_key_name(latest_hash)
         
-        as_json = memcache.get(latest_hash)
-        batch_size = 200
+        batch_size = 400
+        memcache_key = "%s-%d" % (latest_hash,batch_size)
+
+        as_json = memcache.get(memcache_key)
         if as_json is None:
-            q = models.Link.gql("WHERE date_added > :1 ORDER BY date_added ASC", link.date_added)
-            newer_links = q.fetch(batch_size)
-            def clean(l):
-                return l.key().name()
-            links = map(clean, newer_links)
-            as_json = simplejson.dumps(links)
+            q = GqlQuery("SELECT __key__ FROM Link WHERE date_added > :1 ORDER BY date_added ASC",link.date_added)
+
+            links = q.fetch(batch_size)
+            as_json = simplejson.dumps(map(lambda x: x.name(),links))
+
             keep_time = 60 * 60
             if len(links) == batch_size:
                 # this batch is cooked.
                 keep_time = 0
 
-            memcache.add(latest_hash,as_json,keep_time)
+            memcache.add(memcache_key,as_json,keep_time)
 
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(as_json)
