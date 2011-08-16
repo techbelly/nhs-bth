@@ -1,0 +1,92 @@
+<html>
+
+<head>
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>
+  <script type="text/javascript" src="jquery-sha1.js"></script>
+  <script type="text/javascript">
+
+    var links = {};
+    links.db = null;
+
+    links.open = function() {
+      var dbSize = 10 * 1024 * 1024; // 10MB
+      links.db = openDatabase('nhs-bth-links', '1.0', 'behind the headlines links', dbSize);
+    };
+
+    links.createTable = function() {
+      links.db.transaction(function(tx) {
+        tx.executeSql("CREATE TABLE IF NOT EXISTS " +
+                      "links(ID INTEGER PRIMARY KEY ASC, hash TEXT)", []);
+        tx.executeSql("CREATE INDEX IF NOT EXISTS hash_idx ON links (hash)", []);
+      });
+    };
+
+    links.onError = function(tx,e) {
+      console.log('Something unexpected happened: ' + e.message );
+    };
+
+    links.addHash = function(hash) {
+      links.db.transaction(function(tx) {
+        tx.executeSql('INSERT INTO links(hash) VALUES (?)',[hash],null,links.onError);      
+        });
+    };
+
+    links.findHash = function(hash,success) {
+      var dispatch = function(tx,rs) {
+        if (rs.rows.length > 0) {
+          success();
+        }
+      };
+      links.db.transaction(function(tx) {
+        tx.executeSql('SELECT * FROM links WHERE hash = ?', [hash], dispatch, links.onError);
+      });
+    };
+
+    links.findLatest = function(callback) {
+      links.db.transaction(function(tx) {
+        tx.executeSql('SELECT * FROM links ORDER BY ID DESC LIMIT 1',[],callback,links.onError);
+      });
+    };
+
+    links.insertBatch = function(batch) {
+      if (batch.length == 0) { return }
+      for (i in batch) {
+        var hash = batch[i];
+        links.addHash(hash);
+      }
+      window.setTimeout(links.loadLatest,0);
+    };
+
+    links.loadLatest = function() {
+      links.findLatest(function(tx,rs) {
+        var params = {};        
+        if (rs.rows.length > 0) {
+           params = {"latest": rs.rows.item(0).hash};
+        }
+        jQuery.getJSON("http://tbly-nhs.appspot.com/link_hashes",params,links.insertBatch);           
+      });
+    };
+
+    links.init = function() {
+      links.open();
+      links.createTable();
+      links.loadLatest();
+      var updateFreq = 120 * 60 * 1000; // update every 120 minutes
+      window.setInterval(links.loadLatest,updateFreq);
+    }
+
+    function onRequest(request, sender, sendResponse) {
+        var url = sender.tab.url;
+        var url_hash = jQuery.sha1(url);
+        links.findHash(url_hash, function() {
+              chrome.pageAction.show(sender.tab.id);
+        });
+        sendResponse({});
+      };
+
+    chrome.extension.onRequest.addListener(onRequest);
+  </script>
+</head>
+<body onload="links.init()">
+</body>
+</html>

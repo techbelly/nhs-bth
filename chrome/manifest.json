@@ -2,12 +2,30 @@
   "name": "NHS Behind the Headlines checker",
   "version": "1.0",
   "description": "Checks Behind the Headlines blog for stories related to the page you're on",
-  "browser_action": {
-    "default_icon": "icon.gif",
-    "popup": "popup.html"
+  "page_action": {
+    "default_icon": "xray-19.png", 
+    "default_title": "We have FACTS about this page. Click to show them.",  
+    "default_popup": "popup.html"  
+  },
+  "background_page": "background.html",  
+  "content_scripts" : [
+    {
+      "matches" : [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js" : ["contentscript.js"],
+      "run_at" : "document_idle",
+      "all_frames" : false
+    }
+  ], 
+  "icons" : {
+    "48" : "xray-48.png",
+    "128" : "xray-128.png"
   },
   "permissions": [
     "tabs",
+    "background",
     "http://tbly-nhs.appspot.com/"
   ]
 }

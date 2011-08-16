@@ -7,7 +7,6 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   font-size: 14px;
   line-height: 17px;
-  
 }
 
 h2 {
@@ -30,15 +29,22 @@ h2 {
 }
 
 </style>
-<script type="text/javascript" src="http://ajax.googleapis.com/
-ajax/libs/jquery/1.5/jquery.min.js"></script>
-<script>
-    
-    var showArticle = function(data) {
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>
+<script type="text/javascript">
+
+  function onInstall() {
+    console.log("Extension Installed");
+  }
+
+  function onUpdate() {
+    console.log("Extension Updated");
+  }
+
+  function showArticle(data) {
       if (data.length == 0) {
         $('#content').text("Sorry, nothing found for this page.");
       } else {
-        var template = '<h1>FACTS</h1><p>This article is discussed on the NHS\'s <a href="{LINK}">Behind the headlines blog.</a> They were kind enough to find and publish these links:<p>';
+        var template = '<h1><img src="xray-48.png" align="middle"/>FACTS</h1><p>You\'ll find a balanced assessment of the science behind this article on the NHS\'s <a href="{LINK}">Behind the headlines blog.</a></p><p> They were kind enough to find and publish these links:<p>';
         template = template.replace("{LINK}",data[0].address);
         if (data[0].links["science"]) {
           template = template + "<h2>SCIENCE</h2><ul>";
@@ -60,11 +66,35 @@ ajax/libs/jquery/1.5/jquery.min.js"></script>
         $('#content').html(template);
       }
       $('a').attr("target","_blank");
-    };
-    
-    chrome.tabs.getSelected(null, function(tab) {
+    }
+
+
+  function onShow() {
+     chrome.tabs.getSelected(null, function(tab) {
         jQuery.getJSON("http://tbly-nhs.appspot.com/article",{"url":tab.url},showArticle);
     });
+  }
+
+  function getVersion() {
+    var details = chrome.app.getDetails();
+    return details.version;
+  }
+
+  // Check if the version has changed.
+  var currVersion = getVersion();
+  var prevVersion = localStorage['version']
+  if (currVersion != prevVersion) {
+    // Check if we just installed this extension.
+    if (typeof prevVersion == 'undefined') {
+      onInstall();
+    } else {
+      onUpdate();
+    }
+    localStorage['version'] = currVersion;
+  } 
+  
+  onShow();
+    
 </script>
 </head>
 <body>
